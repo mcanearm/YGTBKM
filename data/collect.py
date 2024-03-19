@@ -1,7 +1,12 @@
 import io
+from functools import partial, reduce
+from multiprocessing.pool import ThreadPool
+from pathlib import Path
+from time import sleep
 
 import pandas as pd
 import requests
+from numpy.random import uniform
 
 # Y
 
@@ -11,9 +16,32 @@ import requests
 # DONE Questionnaire: Alcohol Use, Diabetes, Income,  Occupation, Physical Activity, Smoking - Cigarette Use, Kidney Conditions - Urology
 
 
-def read_sas_url(url):
+def read_sas_url(url, **kwargs):
+
     r = requests.get(url)
-    return pd.read_sas(io.BytesIO(r.content), format="xport")
+    return pd.read_sas(io.BytesIO(r.content), format="xport", **kwargs)
+
+
+def retrieve_file(mapping_tuple, output_dir=None, wait_min=1, wait_max=3):
+    dataset_name, metadata = mapping_tuple
+    output_file = Path(output_dir) / f"{dataset_name}.csv"
+    if output_dir:
+        try:
+            assert not output_file.exists()
+        except AssertionError:
+            Warning("{output_file} already exists!")
+            return None
+
+    sleep(uniform(low=wait_min, high=wait_max))
+    df = read_sas_url(metadata["url"])
+    df["SEQN"] = df["SEQN"].astype(pd.Int64Dtype())
+    df = df.set_index("SEQN")[metadata["columns"]]
+
+    if output_dir:
+        df.to_csv(output_dir / f"{dataset_name}.csv")
+        return None
+    else:
+        return df
 
 
 column_mapping = {
@@ -22,7 +50,7 @@ column_mapping = {
         "columns": [
             "RIAGENDR",  # gender (sex)
             "RIDRETH3",  # race including Asian
-            "RIDEXAGM",  # age in months
+            "RIDAGEYR",  # age in months
         ],
     },
     "caff_intake1": {
@@ -34,7 +62,7 @@ column_mapping = {
         "columns": ["DR2ICAFF"],  # caffeine in mg
     },
     "caff_supplement1": {
-        "url": "https://wwwn.cdc.gov/Nchs/Nhanes/2017-2018/DS2TOT_J.XPT",
+        "url": "https://wwwn.cdc.gov/Nchs/Nhanes/2017-2018/P_DSQTOT.XPT",
         "columns": ["DSQTCAFF"],  # caffeine in mg
     },
     "body_measures": {
@@ -93,5 +121,26 @@ column_mapping = {
     },
 }
 
+if __name__ == "__main__":
 
-# pre-existing conditions:
+    output_dir = Path("./raw_data/")
+
+    with ThreadPool(8) as pool:
+        file_download = partial(retrieve_file, output_dir=output_dir)
+        pool.map(file_download, column_mapping.items())
+
+    file_names = output_dir.glob("*.csv")
+
+    def read_file(a, fp):
+        try:
+            return a.merge(
+                pd.read_csv(fp, index_col="SEQN"),
+                how="left",
+                left_index=True,
+                right_index=True,
+            )
+        except AttributeError:
+            return pd.read_csv(fp, index_col="SEQN")
+
+    full_df = reduce(read_file, file_names, None)
+    full_df.to_csv("./full_data.csv")
