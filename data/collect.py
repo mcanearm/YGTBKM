@@ -124,6 +124,7 @@ column_mapping = {
 if __name__ == "__main__":
 
     output_dir = Path("./raw_data/")
+    output_dir.mkdir(exist_ok=True, parents=True)
 
     with ThreadPool(8) as pool:
         file_download = partial(retrieve_file, output_dir=output_dir)
