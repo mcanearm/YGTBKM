@@ -61,6 +61,14 @@ column_mapping = {
         "url": "https://wwwn.cdc.gov/Nchs/Nhanes/2017-2018/DR2IFF_J.XPT",
         "columns": ["DR2ICAFF"],  # caffeine in mg
     },
+    "caff_nutrient1": {
+        "url": "https://wwwn.cdc.gov/Nchs/Nhanes/2017-2018/P_DR1TOT.xpt",
+        "columns": ["DR1TCAFF"],  # caffeine in mg
+    },
+    "caff_nutrient2": {
+        "url": "https://wwwn.cdc.gov/Nchs/Nhanes/2017-2018/P_DR2TOT.xpt",
+        "columns": ["DR2TCAFF"],  # caffeine in mg
+    },
     "caff_supplement1": {
         "url": "https://wwwn.cdc.gov/Nchs/Nhanes/2017-2018/P_DSQTOT.XPT",
         "columns": ["DSQTCAFF"],  # caffeine in mg
