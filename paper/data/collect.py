@@ -8,13 +8,6 @@ import pandas as pd
 import requests
 from numpy.random import uniform
 
-# Y
-
-# DONE Demographic: Demographic Variables and Sample Weights – Participant gender, age, race
-# DONE Dietary: Dietary Supplement Use 30-Day - Individual and Total Dietary Supplements – Caffeine (mg)
-# DONE Examination: Body Measures - Weight (kg)
-# DONE Questionnaire: Alcohol Use, Diabetes, Income,  Occupation, Physical Activity, Smoking - Cigarette Use, Kidney Conditions - Urology
-
 
 def read_sas_url(url, **kwargs):
 
@@ -32,6 +25,7 @@ def retrieve_file(mapping_tuple, output_dir=None, wait_min=1, wait_max=3):
             Warning("{output_file} already exists!")
             return None
 
+    # be nice and don't do too much downloading all at once!
     sleep(uniform(low=wait_min, high=wait_max))
     df = read_sas_url(metadata["url"])
     df["SEQN"] = df["SEQN"].astype(pd.Int64Dtype())
@@ -50,7 +44,7 @@ column_mapping = {
         "columns": [
             "RIAGENDR",  # gender (sex)
             "RIDRETH3",  # race including Asian
-            "RIDAGEYR",  # age in months
+            "RIDAGEYR",  # age in years
         ],
     },
     "caff_intake1": {
@@ -134,7 +128,7 @@ if __name__ == "__main__":
     output_dir = Path("./raw_data/")
     output_dir.mkdir(exist_ok=True, parents=True)
 
-    with ThreadPool(8) as pool:
+    with ThreadPool(len(column_mapping.items())) as pool:
         file_download = partial(retrieve_file, output_dir=output_dir)
         pool.map(file_download, column_mapping.items())
 
