@@ -44,7 +44,7 @@ column_mapping = {
         "columns": [
             "RIAGENDR",  # gender (sex)
             "RIDRETH3",  # race including Asian
-            "RIDAGEYR",  # age in months
+            "RIDAGEYR",  # age in years
         ],
     },
     "caff_intake1": {
@@ -128,7 +128,7 @@ if __name__ == "__main__":
     output_dir = Path("./raw_data/")
     output_dir.mkdir(exist_ok=True, parents=True)
 
-    with ThreadPool(8) as pool:
+    with ThreadPool(len(column_mapping.items())) as pool:
         file_download = partial(retrieve_file, output_dir=output_dir)
         pool.map(file_download, column_mapping.items())
 
