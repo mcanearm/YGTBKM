@@ -30,9 +30,9 @@ column_map = {
     "DIQ280": "diabetes_aic",
     "SMQ020": "smoking_100cigs",
     "SMD650": "smoking_cigs_pd",
+    "KIQ022": "kidney_weak_failing",
     "KIQ026": "kidney_had_stones",
     "KIQ029": "kidney_passed_stone",
-    "KIQ022": "kidney_weak_failing",
     "RIAGENDR": "demo_gender",
     "RIDRETH3": "demo_race",
     "RIDAGEYR": "demo_age",
@@ -63,7 +63,9 @@ if __name__ == "__main__":
     df = pd.read_csv("./full_data.csv", index_col="SEQN")
 
     # raw data cleaning steps; handle missing
+    df["KIQ022"] = 0 or df["KIQ026"] == 1
     df["KIQ026"] = 0 or df["KIQ026"] == 1
+    df["KIQ029"] = 0 or df["KIQ029"] == 1
 
     df["ALQ130"] = max_val_null(df["ALQ130"], 16)
     df["PAD660"] = max_val_null(df["PAD660"], 7777)
@@ -112,7 +114,11 @@ if __name__ == "__main__":
                 SimpleImputer(strategy="median"),
                 ["alcohol_nmbr_drinks", "poverty_num"],
             ),
-            ("static_impute", SimpleImputer(fill_value=40), ["occ_hours_worked"]),
+            (
+                "static_impute",
+                SimpleImputer(fill_value=40),
+                ["occ_hours_worked", "smoking_cigs_pd"],
+            ),
             (
                 "zero_impute",
                 SimpleImputer(fill_value=0),
@@ -133,12 +139,23 @@ if __name__ == "__main__":
             "alcohol_nmbr_drinks",
             "poverty_num",
             "occ_hours_worked",
+            "smoking_cigs_pd",
             "activity_vig_min",
             "activity_mod_min",
             "caffeine_mg",
             "caffeine_mg_log",
         ],
         index=df.index.values,
+    ).merge(
+        df[
+            [
+                "kidney_had_stones",
+                "kidney_passed_stone",
+                "kidney_weak_failing",
+            ]
+        ],
+        left_index=True,
+        right_index=True,
     )
 
     transformed_data.to_csv("./prepared_data.csv")
