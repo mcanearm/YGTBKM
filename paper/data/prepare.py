@@ -33,7 +33,7 @@ column_map = {
     "KIQ022": "kidney_weak_failing",
     "KIQ026": "kidney_had_stones",
     "KIQ029": "kidney_passed_stone",
-    "RIAGENDR": "demo_gender",
+    "RIAGENDR": "is_male",
     "RIDRETH3": "demo_race",
     "RIDAGEYR": "demo_age",
 }
@@ -74,6 +74,7 @@ if __name__ == "__main__":
     df["PAQ605"] = df["PAQ605"] == 1
     df["PAQ620"] = df["PAQ620"] == 1
     df["OCQ180"] = max_val_null(df["OCQ180"], 7777)
+    df["RIAGENDR"] = df["RIAGENDR"] == 1  # no missing
 
     df = df.rename(column_map, axis=1)
     df = df[df["demo_age"] >= 18]
@@ -105,8 +106,6 @@ if __name__ == "__main__":
                     "bmi_total",
                     "demo_age",
                     "activity_sed_min",
-                    # "activity_vig_min",  # 80% missing - probably remove
-                    # "activity_mod_min",  # 60% missing - probably remove
                 ],
             ),
             (
@@ -115,16 +114,20 @@ if __name__ == "__main__":
                 ["alcohol_nmbr_drinks", "poverty_num"],
             ),
             (
-                "static_impute",
-                SimpleImputer(fill_value=40),
-                ["occ_hours_worked", "smoking_cigs_pd"],
-            ),
-            (
                 "zero_impute",
                 SimpleImputer(fill_value=0),
-                ["activity_vig_min", "activity_mod_min"],
+                ["activity_vig_min", "activity_mod_min", "smoking_cigs_pd"],
             ),
-            ("passthrough", FunctionTransformer(lambda x: x), ["any_caffeine"]),
+            (
+                "static_impute",
+                SimpleImputer(fill_value=40),
+                ["occ_hours_worked"],
+            ),
+            (
+                "passthrough",
+                FunctionTransformer(lambda x: x),
+                ["any_caffeine", "demo_race", "is_male"],
+            ),
             ("log_caff", FunctionTransformer(lambda x: np.log1p(x)), ["any_caffeine"]),
         ]
     )
@@ -138,11 +141,13 @@ if __name__ == "__main__":
             "activity_sed_min",
             "alcohol_nmbr_drinks",
             "poverty_num",
-            "occ_hours_worked",
-            "smoking_cigs_pd",
             "activity_vig_min",
             "activity_mod_min",
+            "smoking_cigs_pd",
+            "occ_hours_worked",
             "caffeine_mg",
+            "demo_race",
+            "is_male",
             "caffeine_mg_log",
         ],
         index=df.index.values,
