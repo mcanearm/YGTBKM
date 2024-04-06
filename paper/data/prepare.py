@@ -169,7 +169,7 @@ if __name__ == "__main__":
     transformed_data = pd.DataFrame(
         transformed_data,
         columns=post_processing_cols,
-        index=df.index.values,
+        index=df.index,
     ).merge(
         df[
             [
