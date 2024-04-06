@@ -3,7 +3,7 @@ import pandas as pd
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import KNNImputer, SimpleImputer
 from sklearn.pipeline import FunctionTransformer, Pipeline
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 column_map = {
     "INDFMMPI": "poverty_num",
@@ -76,8 +76,26 @@ if __name__ == "__main__":
     df["OCQ180"] = max_val_null(df["OCQ180"], 7777)
     df["RIAGENDR"] = df["RIAGENDR"] == 1  # no missing
 
+    def map_race(val):
+        match val:
+            case 1.0:
+                return "mexican_american"
+            case 2.0:
+                return "hispanic_other"
+            case 3.0:
+                return "white"
+            case 4.0:
+                return "black"
+            case 6.0:
+                return "asian_non_hisp"
+            case 7.0:
+                return "other_or_multi"
+            case _:
+                return "missing"
+
     df = df.rename(column_map, axis=1)
     df = df[df["demo_age"] >= 18]
+    df["demo_race_str"] = df["demo_race"].apply(map_race)
 
     df["any_caffeine"] = (
         pd.concat(
@@ -126,30 +144,31 @@ if __name__ == "__main__":
             (
                 "passthrough",
                 FunctionTransformer(lambda x: x),
-                ["any_caffeine", "demo_race", "is_male"],
+                ["any_caffeine", "is_male"],
+            ),
+            (
+                "one_hot",
+                OneHotEncoder(sparse_output=False, drop=["white"]),
+                ["demo_race_str"],
             ),
             ("log_caff", FunctionTransformer(lambda x: np.log1p(x)), ["any_caffeine"]),
         ]
     )
 
     transformed_data = preprocessor.fit_transform(df)
+    post_processing_cols = []
+    for t in preprocessor.transformers_:
+        if t[0] == "remainder":
+            continue
+        processor_cols = (
+            t[1].get_feature_names_out() if "demo_race_str" in t[2] else t[2]
+        )
+        for c in processor_cols:
+            post_processing_cols.append(c)
+
     transformed_data = pd.DataFrame(
         transformed_data,
-        columns=[
-            "bmi_total",
-            "demo_age",
-            "activity_sed_min",
-            "alcohol_nmbr_drinks",
-            "poverty_num",
-            "activity_vig_min",
-            "activity_mod_min",
-            "smoking_cigs_pd",
-            "occ_hours_worked",
-            "caffeine_mg",
-            "demo_race",
-            "is_male",
-            "caffeine_mg_log",
-        ],
+        columns=post_processing_cols,
         index=df.index.values,
     ).merge(
         df[
