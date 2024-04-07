@@ -67,6 +67,8 @@ if __name__ == "__main__":
     df["KIQ026"] = 0 or df["KIQ026"] == 1
     df["KIQ029"] = 0 or df["KIQ029"] == 1
 
+    df["SMD650"] = max_val_null(df["SMD650"], 777)
+
     df["ALQ130"] = max_val_null(df["ALQ130"], 16)
     df["PAD660"] = max_val_null(df["PAD660"], 7777)
     df["PAD675"] = max_val_null(df["PAD675"], 7777)
@@ -114,6 +116,7 @@ if __name__ == "__main__":
         .max(axis=1)
         .fillna(0)
     )
+    df["any_caffeine_log"] = np.log1p(df["any_caffeine"])
 
     preprocessor = ColumnTransformer(
         [
@@ -143,29 +146,20 @@ if __name__ == "__main__":
             ),
             (
                 "passthrough",
-                FunctionTransformer(lambda x: x),
-                ["any_caffeine", "is_male"],
+                "passthrough",
+                ["any_caffeine", "is_male", "any_caffeine_log"],
             ),
             (
                 "one_hot",
                 OneHotEncoder(sparse_output=False, drop=["white"]),
                 ["demo_race_str"],
             ),
-            ("log_caff", FunctionTransformer(lambda x: np.log1p(x)), ["any_caffeine"]),
-        ]
+        ],
+        remainder="drop",
     )
 
     transformed_data = preprocessor.fit_transform(df)
-    post_processing_cols = []
-    for t in preprocessor.transformers_:
-        if t[0] == "remainder":
-            continue
-        processor_cols = (
-            t[1].get_feature_names_out() if "demo_race_str" in t[2] else t[2]
-        )
-        for c in processor_cols:
-            post_processing_cols.append(c)
-
+    post_processing_cols = preprocessor.get_feature_names_out()
     transformed_data = pd.DataFrame(
         transformed_data,
         columns=post_processing_cols,
