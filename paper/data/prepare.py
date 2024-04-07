@@ -136,12 +136,12 @@ if __name__ == "__main__":
             ),
             (
                 "zero_impute",
-                SimpleImputer(fill_value=0),
+                SimpleImputer(fill_value=0, strategy="constant"),
                 ["activity_vig_min", "activity_mod_min", "smoking_cigs_pd"],
             ),
             (
                 "static_impute",
-                SimpleImputer(fill_value=40),
+                SimpleImputer(fill_value=40, strategy="constant"),
                 ["occ_hours_worked"],
             ),
             (
