@@ -3,7 +3,7 @@ import pandas as pd
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import KNNImputer, SimpleImputer
 from sklearn.pipeline import FunctionTransformer, Pipeline
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 column_map = {
     "INDFMMPI": "poverty_num",
@@ -33,7 +33,7 @@ column_map = {
     "KIQ022": "kidney_weak_failing",
     "KIQ026": "kidney_had_stones",
     "KIQ029": "kidney_passed_stone",
-    "RIAGENDR": "demo_gender",
+    "RIAGENDR": "is_male",
     "RIDRETH3": "demo_race",
     "RIDAGEYR": "demo_age",
 }
@@ -67,6 +67,8 @@ if __name__ == "__main__":
     df["KIQ026"] = 0 or df["KIQ026"] == 1
     df["KIQ029"] = 0 or df["KIQ029"] == 1
 
+    df["SMD650"] = max_val_null(df["SMD650"], 777)
+
     df["ALQ130"] = max_val_null(df["ALQ130"], 16)
     df["PAD660"] = max_val_null(df["PAD660"], 7777)
     df["PAD675"] = max_val_null(df["PAD675"], 7777)
@@ -74,9 +76,28 @@ if __name__ == "__main__":
     df["PAQ605"] = df["PAQ605"] == 1
     df["PAQ620"] = df["PAQ620"] == 1
     df["OCQ180"] = max_val_null(df["OCQ180"], 7777)
+    df["RIAGENDR"] = df["RIAGENDR"] == 1  # no missing
+
+    def map_race(val):
+        match val:
+            case 1.0:
+                return "mexican_american"
+            case 2.0:
+                return "hispanic_other"
+            case 3.0:
+                return "white"
+            case 4.0:
+                return "black"
+            case 6.0:
+                return "asian_non_hisp"
+            case 7.0:
+                return "other_or_multi"
+            case _:
+                return "missing"
 
     df = df.rename(column_map, axis=1)
     df = df[df["demo_age"] >= 18]
+    df["demo_race_str"] = df["demo_race"].apply(map_race)
 
     df["any_caffeine"] = (
         pd.concat(
@@ -95,6 +116,7 @@ if __name__ == "__main__":
         .max(axis=1)
         .fillna(0)
     )
+    df["any_caffeine_log"] = np.log1p(df["any_caffeine"])
 
     preprocessor = ColumnTransformer(
         [
@@ -105,8 +127,6 @@ if __name__ == "__main__":
                     "bmi_total",
                     "demo_age",
                     "activity_sed_min",
-                    # "activity_vig_min",  # 80% missing - probably remove
-                    # "activity_mod_min",  # 60% missing - probably remove
                 ],
             ),
             (
@@ -115,37 +135,35 @@ if __name__ == "__main__":
                 ["alcohol_nmbr_drinks", "poverty_num"],
             ),
             (
-                "static_impute",
-                SimpleImputer(fill_value=40),
-                ["occ_hours_worked", "smoking_cigs_pd"],
-            ),
-            (
                 "zero_impute",
                 SimpleImputer(fill_value=0),
-                ["activity_vig_min", "activity_mod_min"],
+                ["activity_vig_min", "activity_mod_min", "smoking_cigs_pd"],
             ),
-            ("passthrough", FunctionTransformer(lambda x: x), ["any_caffeine"]),
-            ("log_caff", FunctionTransformer(lambda x: np.log1p(x)), ["any_caffeine"]),
-        ]
+            (
+                "static_impute",
+                SimpleImputer(fill_value=40),
+                ["occ_hours_worked"],
+            ),
+            (
+                "passthrough",
+                "passthrough",
+                ["any_caffeine", "is_male", "any_caffeine_log"],
+            ),
+            (
+                "one_hot",
+                OneHotEncoder(sparse_output=False, drop=["white"]),
+                ["demo_race_str"],
+            ),
+        ],
+        remainder="drop",
     )
 
     transformed_data = preprocessor.fit_transform(df)
+    post_processing_cols = preprocessor.get_feature_names_out()
     transformed_data = pd.DataFrame(
         transformed_data,
-        columns=[
-            "bmi_total",
-            "demo_age",
-            "activity_sed_min",
-            "alcohol_nmbr_drinks",
-            "poverty_num",
-            "occ_hours_worked",
-            "smoking_cigs_pd",
-            "activity_vig_min",
-            "activity_mod_min",
-            "caffeine_mg",
-            "caffeine_mg_log",
-        ],
-        index=df.index.values,
+        columns=post_processing_cols,
+        index=df.index,
     ).merge(
         df[
             [
