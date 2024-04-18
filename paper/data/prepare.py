@@ -81,9 +81,9 @@ if __name__ == "__main__":
     def map_race(val):
         match val:
             case 1.0:
-                return "mexican_american"
+                return "hispanic"
             case 2.0:
-                return "hispanic_other"
+                return "hispanic"
             case 3.0:
                 return "white"
             case 4.0:
@@ -136,12 +136,12 @@ if __name__ == "__main__":
             ),
             (
                 "zero_impute",
-                SimpleImputer(fill_value=0),
+                SimpleImputer(fill_value=0, strategy="constant"),
                 ["activity_vig_min", "activity_mod_min", "smoking_cigs_pd"],
             ),
             (
                 "static_impute",
-                SimpleImputer(fill_value=40),
+                SimpleImputer(fill_value=40, strategy="constant"),
                 ["occ_hours_worked"],
             ),
             (

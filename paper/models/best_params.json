@@ -1,0 +1,14 @@
+{
+    "activity_sed_min_lam": 1693.0345176200303,
+    "activity_vig_min_lam": 5803.051976239882,
+    "alcohol_nmbr_drinks_lam": 2937.730636487426,
+    "any_caffeine_log_lam": 3413.5319555626993,
+    "bmi_total_lam": 2882.495994270888,
+    "demo_age_lam": 1729.1589102582727,
+    "demo_race_str_black_lam": 76.87850203959292,
+    "demo_race_str_hispanic_lam": 3789.0173107576784,
+    "is_male_lam": 5670.723638795338,
+    "occ_hours_worked_lam": 4283.228581951877,
+    "poverty_num_lam": 2644.728107040034,
+    "smoking_cigs_pd_lam": 3270.857673731769
+}
