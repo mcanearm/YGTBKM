@@ -81,9 +81,9 @@ if __name__ == "__main__":
     def map_race(val):
         match val:
             case 1.0:
-                return "mexican_american"
+                return "hispanic"
             case 2.0:
-                return "hispanic_other"
+                return "hispanic"
             case 3.0:
                 return "white"
             case 4.0:
