@@ -1,8 +1,13 @@
 cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
 authors:
-  - family-names: Golab, Himmel, McAnear
-    given-names: Eric, Rachel, Matthew
-title: "Investigating the Relationship Between Caffeine Consumption and Kidney Stones"
+- family-names: "Golab"
+  given-names: "Eric"
+- family-names: "Himmel"
+  given-names: "Rachel"
+- family-names: "McAnear"
+  given-names: "Matt"
+title: "YGTBKM - NHANES and Kaggle Reports"
 version: 0.0.1
 date-released: 2024-04-21
+url: "https://github.com/mcanearm/ygtbkm"
