@@ -16,8 +16,7 @@
 
 ## Response
 
-1) Kidney Disease
-2) Bone Density
+1) Have you ever passed a kidney stone?
 
 ## Reproducing
 
